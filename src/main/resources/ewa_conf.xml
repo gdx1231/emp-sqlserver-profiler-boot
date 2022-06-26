@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ewa_confs>
+	<define allow="false" />
+	<admins>
+		<admin loginId="admin" password="" username="Admin" />
+	</admins>
+	<!-- 配置文件缓存方式，没有的化是用内存 内存memory，HSQL模式 sqlcached -->
+	<cfgCacheMethod value="sqlcached" />
+	<!-- 初始化加载的全局变量 -->
+	<requestValuesGlobal>
+		<!-- EWA_STYLE 静态文件所在目录 -->
+		<rv name="rv_ewa_style_path" value="/sp/EmpScriptV2/" />
+	</requestValuesGlobal>
+	<!-- 雪花分布式id -->
+	<snowflake workId="0" datacenterId="0" />
+	<scriptPaths>
+		<!-- System inner configuration ewa.xml, m.xml -->
+		<scriptPath name="ewa" path="resources:/define.xml" />
+		<!-- sqlprofiler.xml -->
+		<scriptPath name="sqlprofiler" path="resources:/sqlprofiler_define_xml" />
+	</scriptPaths>
+	<securities>
+		<!-- use for cookie encrypt/decrypt -->
+		<security name="aes0" algorithm="aes-256-gcm" default="true" key="sa2123121241231dfsfsdf" iv="" />
+	</securities>
+	<!-- 用户自定义参数 -->
+	<initparas>
+		<!-- sqlprofiler HSQLDB数据库所在目录，不设定的话，会在临时目录创建 -->
+		<para name="sqlprofiler_hsqldb_path" value="" />
+	</initparas>
+	<paths>
+		<!-- 缓存配置 -->
+		<path name="cached_path" value="" />
+		<!-- 图片缩略图保存根路径 -->
+		<path name="img_tmp_path" value="" />
+		<!-- 图片缩略图保存根路径URL, ！！！需要在Tomcat或Apache或Nginx中配置虚拟路径！！！。 -->
+		<path name="img_tmp_path_url" value="/sp/images/" />
+	</paths>
+	<databases>
+	 	<!-- 使用hsql服务器模式
+	 	java -cp ../target/lib/hsqldb-2.6.1.jar org.hsqldb.Server \ 
+			-database.0 hsqldb \
+			-dbname.0 sqlprofiler \
+			-port 59001 \
+			-address localhost \
+			-silent false \
+			-trace true 
+		-->
+		<!--  
+			<database name="hsqldb_server" 
+				 type="HSQLDB"
+				 connectionString="jdbc/hsqldb_server"
+				 schemaName="PUBLIC">
+				 <pool driverClassName="org.hsqldb.jdbc.JDBCDriver" 
+					username="SA"
+					password="gldflg!fsd$fldfnnd"
+					url="jdbc:hsqldb:hsql://localhost:59001/sqlprofiler"
+					maxActive="10" 
+					maxIdle="120" 
+					maxWait="5000" />
+			</database> 
+		-->
+	</databases>
+</ewa_confs>
