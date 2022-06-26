@@ -11,7 +11,8 @@ server:
 logging:
   level:
     '[org.springframework]': INFO
-    '[com.gdxsoft]': INFO         
+    '[com.gdxsoft.ewasyweb]': INFO
+    '[com.gdxsoft.sqlProfiler]': DEBUG         
 spring:
   servlet:
     multipart:
