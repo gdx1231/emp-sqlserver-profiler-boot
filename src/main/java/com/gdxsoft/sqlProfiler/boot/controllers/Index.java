@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.gdxsoft.easyweb.data.DTTable;
 import com.gdxsoft.easyweb.script.HtmlControl;
 import com.gdxsoft.easyweb.script.RequestValue;
+import com.gdxsoft.easyweb.utils.UAes;
 import com.gdxsoft.easyweb.utils.UJSon;
 import com.gdxsoft.sqlProfiler.HSqlDbServer;
 import com.gdxsoft.sqlProfiler.ProfilerControl;
@@ -22,6 +25,7 @@ import com.gdxsoft.sqlProfiler.boot.EmpScriptProfilerBootApplication;
 
 @Controller
 public class Index {
+	private static Logger LOGGER = LoggerFactory.getLogger(Index.class);
 
 	@RequestMapping({ "/", "/index" })
 	@ResponseBody
@@ -29,7 +33,8 @@ public class Index {
 		try {
 			com.gdxsoft.sqlProfiler.HSqlDbServer.getInstance();
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.error("HSqlDbServer.getInstance {}", e.getMessage());
+			return "HSqlDbServer.getInstance, " + e.getLocalizedMessage();
 		}
 
 		RequestValue rv = new RequestValue(request);
@@ -53,8 +58,10 @@ public class Index {
 		try {
 			com.gdxsoft.sqlProfiler.HSqlDbServer.getInstance();
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.error("HSqlDbServer.getInstance {}", e.getMessage());
+			return "HSqlDbServer.getInstance, " + e.getLocalizedMessage();
 		}
+
 		RequestValue rv = new RequestValue(request);
 		String method = rv.s("method");
 		int tsId = -1;
@@ -63,18 +70,35 @@ public class Index {
 		} catch (Exception err) {
 			return UJSon.rstFalse("错误的参数: ts_id").toString(2);
 		}
-		if (method == null) {
-			String sql = "select * from TRACE_SERVER where ts_id = @ts_id";
-			DTTable tb = DTTable.getJdbcTable(sql, HSqlDbServer.CONN_STR, rv);
-			if (tb.getCount() == 0) {
-				return UJSon.rstFalse("配置信息不存在").toString(2);
-			}
+		String sql = "select * from TRACE_SERVER where ts_id = " + tsId;
+		DTTable tb = DTTable.getJdbcTable(sql, HSqlDbServer.CONN_STR);
+		if (tb.getCount() == 0) {
+			return UJSon.rstFalse("配置信息不存在").toString(2);
 		}
 		SqlServerProfiler sp;
 		try {
+			String server = tb.getCell(0, "TS_HOST").toString();
+			int port = tb.getCell(0, "TS_PORT").toInt();
+			String database = tb.getCell(0, "TS_DATABASE").toString();
+			String username = tb.getCell(0, "TS_UID").toString();
+			String password = tb.getCell(0, "TS_PWD").toString();
+			if (password != null && password.trim().length() > 0) {
+				password = UAes.defaultDecrypt(password);
+			}
+
 			sp = SqlServerProfiler.getInstance(tsId);
-			if (!EmpScriptProfilerBootApplication.SqlServerProfilers.containsKey(tsId)) {
-				EmpScriptProfilerBootApplication.SqlServerProfilers.put(tsId, sp);
+			if (sp.getServer().equals(server) && sp.getPort() == port && sp.getPassword().equals(password)
+					&& sp.getUsername().equals(username) && sp.getDatabase().equals(database)) {
+				if (!EmpScriptProfilerBootApplication.SqlServerProfilers.containsKey(tsId)) {
+					EmpScriptProfilerBootApplication.SqlServerProfilers.put(tsId, sp);
+				}
+			} else {
+				// 参数变化了
+				sp.stopProfiling();
+				SqlServerProfiler.removeInstance(tsId);
+				
+				EmpScriptProfilerBootApplication.SqlServerProfilers.remove(tsId);
+				return UJSon.rstFalse("Conf changed, delete the instance").toString(2);
 			}
 		} catch (Exception e) {
 			return UJSon.rstFalse(e.getMessage()).toString(2);
@@ -93,6 +117,7 @@ public class Index {
 			}
 			return result.toString(2);
 		}
+
 		String xmlName = "sqlprofiler.xml";
 		String itemName = "TRACE_LOG.LF.M";
 		String paras = "";
