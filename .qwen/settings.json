@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java *)",
+      "Bash(native-image *)",
+      "Bash(./mvnw *)",
+      "Bash(mkdir *)",
+      "Bash(jar *)",
+      "Bash(unzip *)"
+    ]
+  },
+  "$version": 4
+}
